@@ -213,7 +213,7 @@ entity CPU_FSM is
     IN_VLD : in std_logic;
     OUT_BUSY : in std_logic;
     DATA_RDATA : in std_logic_vector (7 downto 0);
-    CNT_OUT : in std_logic_vector (11 downto 0); -- značí počet zátvoriek
+    CNT_OUT : in std_logic_vector (11 downto 0);
 
     -- Outputs
     PTR_INC : out std_logic := '0';
