@@ -34,18 +34,17 @@ entity CPU_PC is
   
    cpu_pc : process (CLK,RST,PC_INC,PC_DEC,PC_CLR) 
     begin
-       if (RST = '1') then
-        pc_val <= (others => '0');
-       elsif (CLK'event and CLK = '1') then
+       if RST = '1' then
+        pc_val <= "000000000000";
+       elsif CLK'event and CLK = '1' then
 
-        if(PC_INC = '1') then
+        if PC_INC = '1' then
           pc_val <= pc_val + 1;
-        elsif(PC_DEC = '1') then
+        elsif PC_DEC = '1' then
           pc_val <= pc_val - 1;
-        elsif(PC_CLR = '1') then
-          pc_val <= (others => '0');
+        elsif PC_CLR = '1' then
+          pc_val <= "000000000000";
         end if;
-
        end if;
     end process;
  
@@ -83,23 +82,22 @@ entity CPU_CNT is
   
    cpu_cnt : process (CLK,RST,CNT_INC,CNT_DEC,CNT_CLR) 
     begin
-       if (RST = '1') then
-        cnt_val <= (others => '0');
-       elsif (CLK'event and CLK = '1') then
+       if RST = '1' then
+        cnt_val <= "000000000000";
+       elsif CLK'event and CLK = '1' then
 
-        if(CNT_INC = '1') then
+        if CNT_INC = '1' then
           cnt_val <= cnt_val + 1;
-        elsif(CNT_DEC = '1') then
+        elsif CNT_DEC = '1' then
           cnt_val <= cnt_val - 1;
-        elsif(CNT_CLR = '1') then
-          cnt_val <= (others => '0');
+        elsif CNT_CLR = '1' then
+          cnt_val <= "000000000000";
         end if;
-
        end if;
     end process;
- 
+
     CNT_OUT <= cnt_val;
-     
+  
   end behavioral;
 
 ---------------------------------------------------------
@@ -132,23 +130,22 @@ entity CPU_PTR is
   
    cpu_ptr : process (CLK,RST,PTR_INC,PTR_DEC,PTR_CLR) 
     begin
-       if (RST = '1') then
-        ptr_val <= (others => '0');
-       elsif (CLK'event and CLK = '1') then
+       if RST = '1' then
+        ptr_val <= "0000000000";
+       elsif CLK'event and CLK = '1' then
 
-        if(PTR_INC = '1') then
+        if PTR_INC = '1' then
           ptr_val <= ptr_val + 1;
-        elsif(PTR_DEC = '1') then
+        elsif PTR_DEC = '1' then
           ptr_val <= ptr_val - 1;
-        elsif(PTR_CLR = '1') then
-          ptr_val <= (others => '0');
+        elsif PTR_CLR = '1' then
+          ptr_val <= "0000000000";
         end if;
-
        end if;
     end process;
- 
+
     PTR_OUT <= ptr_val;
-     
+         
   end behavioral;
 
 ---------------------------------------------------------
@@ -181,17 +178,17 @@ entity CPU_MUX is
    cpu_mux : process (CLK,RST,DATA_IN_00,DATA_IN_01,MUX_SEL) 
     begin
        if (RST = '1') then
-        mux_val <= (others => '0');
-       elsif (CLK'event and CLK = '1') then
+        mux_val <= "00000000";
+       elsif CLK'event and CLK = '1' then
           case MUX_SEL is
             when "00" =>  mux_val <= DATA_IN_00;
-            when "01" =>  mux_val <= DATA_IN_01 +1;
-            when "10" =>  mux_val <= DATA_IN_01 -1;
-            when others => mux_val <= (others => '0');
+            when "01" =>  mux_val <= DATA_IN_01 -1;
+            when "10" =>  mux_val <= DATA_IN_01 +1;
+            when others => mux_val <= "00000000";
           end case;
        end if;
     end process;
- 
+
     MUX_OUT <= mux_val;
      
   end behavioral;
@@ -216,28 +213,29 @@ entity CPU_FSM is
     IN_VLD : in std_logic;
     OUT_BUSY : in std_logic;
     DATA_RDATA : in std_logic_vector (7 downto 0);
-    CNT_REG : in std_logic_vector (11 downto 0); -- značí počet zátvoriek
+    CNT_OUT : in std_logic_vector (11 downto 0); -- značí počet zátvoriek
+
     -- Outputs
-    PTR_INC : out std_logic;
-    PTR_DEC : out std_logic;
-    PTR_CLEAR : out std_logic;
+    PTR_INC : out std_logic := '0';
+    PTR_DEC : out std_logic := '0';
+    PTR_CLEAR : out std_logic := '0';
 
-    CNT_INC : out std_logic;
-    CNT_DEC : out std_logic;
-    CNT_CLEAR : out std_logic;
+    CNT_INC : out std_logic := '0';
+    CNT_DEC : out std_logic := '0';
+    CNT_CLEAR : out std_logic := '0';
 
-    PC_INC : out std_logic;
-    PC_DEC : out std_logic;
-    PC_CLEAR : out std_logic;
+    PC_INC : out std_logic := '0';
+    PC_DEC : out std_logic := '0';
+    PC_CLEAR : out std_logic := '0';
 
-    DATA_WREN : out std_logic;
-    DATA_EN : out std_logic;
+    DATA_WREN : out std_logic := '0';
+    DATA_EN : out std_logic := '0';
 
     MUX_SEL : out std_logic_vector (1 downto 0) := "00";
-    CODE_EN : out std_logic;
+    CODE_EN : out std_logic := '0';
 
-    IN_REQ : out std_logic;
-    OUT_WREN : out std_logic  
+    IN_REQ : out std_logic := '0';
+    OUT_WREN : out std_logic := '0'  
     );
 end entity CPU_FSM;
   
@@ -245,9 +243,12 @@ end entity CPU_FSM;
   architecture behavioral of CPU_FSM is
 
     type cpu_fsm_state is (
+        -- Service states
         state_idle,
         state_load_instruction,
         state_decode_instruction,
+
+        -- Ptr states
         state_inc_val_ptr,
         state_dec_val_ptr,
 
@@ -255,31 +256,37 @@ end entity CPU_FSM;
         state_inc_cell_start,
         state_mux_sel_01,
         state_inc_cell_end,
+
         -- Dec cell states
         state_dec_cell_start,
         state_mux_sel_10,
         state_dec_cell_end,
+
         -- Set char states
         state_set_char_start,
         state_set_char_end,
+
         -- Get char states
         state_get_char_start,
         state_get_char_end,
+
         -- While end states
         state_while_end,
-        state_while_end_ram_dataptr,
-        state_while_end_rom_enable,
+        state_while_end_ram_ptr,
         state_while_end_cnt_loop,
         state_while_end_cnt_check,
+        state_while_end_rom_en,
+
         -- While start states
         state_while_start,
-        state_while_start_ram_dataptr,
+        state_while_start_ram_ptr,
         state_while_start_cnt_check,
-        state_while_start_rom_enable,
+        state_while_start_rom_en,
+
         -- break states
-        state_break_start,
-        state_break_end,
-        state_break_rom_enable,
+        state_break,
+        state_break_cnt_loop,
+        state_break_rom_en,
 
         state_return,
         state_other
@@ -287,330 +294,342 @@ end entity CPU_FSM;
 
     signal current_state : cpu_fsm_state := state_idle;
     signal next_state : cpu_fsm_state;
-     
     begin
 
-   cpu_fsm_current_state_proc : process (CLK, RST, EN)
-   begin
-    if RST = '1' then 
-      current_state <= state_idle; 
-    elsif CLK'event AND CLK = '1' AND EN = '1' then
-      current_state <= next_state;
-    end if;
-   end process;
-
-   -- Proces obsluhujúci prepínanie stavov.
-   cpu_fsm_next_state_proc : process (CLK, RST, EN, IN_VLD, OUT_BUSY, DATA_RDATA, CNT_REG, CODE_DATA, current_state)
+    -- Logika spracovania aktuálneho stavu
+    cpu_fsm_current_state_proc : process (CLK, RST)
     begin
-
+        if RST = '1' then
+			current_state <= state_idle;
+		elsif CLK'event and CLK = '1' and EN = '1' then
+            current_state <= next_state; 
+		end if;
+    end process;
+    
+    -- Logika spracovania následujúceho stavu
+    cpu_fsm_next_state_proc : process (CODE_DATA, IN_VLD, OUT_BUSY, DATA_RDATA, CNT_OUT ,current_state)
+    begin
         case current_state is
-          when state_idle =>  
-            next_state <= state_load_instruction;
-  
-          when state_load_instruction => 
-            next_state <= state_decode_instruction;
-  
-          when state_decode_instruction =>
-            case CODE_DATA is
-              when X"3E" => next_state <= state_inc_val_ptr;
-              when X"3C" => next_state <= state_dec_val_ptr;
-              when X"2B" => next_state <= state_inc_cell_start;
-              when X"2D" => next_state <= state_dec_cell_start;
-              when X"5B" => next_state <= state_while_start;
-              when X"5D" => next_state <= state_while_end;
-              when X"2E" => next_state <= state_get_char_start;
-              when X"2C" => next_state <= state_set_char_start;
-              when X"7E" => next_state <= state_break_start;
-              when X"00" => next_state <= state_return;
-              when others => next_state <= state_other;
-            end case;
-          
-          when state_inc_val_ptr => 
-            next_state <= state_load_instruction;
-  
-          when state_dec_val_ptr => 
-            next_state <= state_load_instruction;
-  
-          when state_inc_cell_start =>
-            next_state <= state_mux_sel_01;
-  
-          when state_mux_sel_01 =>
-            next_state <= state_inc_cell_end;
-  
-          when state_inc_cell_end => 
-            next_state <= state_load_instruction;
-  
-          when state_dec_cell_start => 
-            next_state <= state_mux_sel_10;
-  
-          when state_mux_sel_10 => 
-            next_state <= state_dec_cell_end;
-  
-          when state_dec_cell_end => 
-            next_state <= state_load_instruction;
-  
-          -- Set char states
-          when state_set_char_start => 
-            next_state <= state_set_char_end;
-  
-          when state_set_char_end =>
-            if OUT_BUSY = '0' then
-              next_state <= state_load_instruction;
-            else
-              next_state <= state_set_char_end;
-            end if;
-          -- Get char states
-          when state_get_char_start =>
-            next_state <= state_get_char_end;
-  
-          when state_get_char_end =>
-            if IN_VLD /= '1' then
-              next_state <= state_get_char_end;
-            else
-              next_state <= state_load_instruction;
-            end if;
-          -- While End states
-          when state_while_end =>
-            next_state <= state_while_end_ram_dataptr;
-  
-          when state_while_end_ram_dataptr =>
-            if DATA_RDATA = "00000000" then
-              next_state <= state_load_instruction;        
-            else
-              next_state <= state_while_end_rom_enable;
-            end if;
-  
-          when state_while_end_rom_enable =>
-            next_state <= state_while_end_cnt_loop;
-  
-          when state_while_end_cnt_loop =>
-            if CNT_REG = "000000000000" then
-              next_state <= state_load_instruction;
-            else
-              next_state <= state_while_end_cnt_check;
-            end if;
-  
-          when state_while_end_cnt_check =>
-            next_state <= state_while_end_rom_enable;
-  
-          -- While start states
-          when state_while_start =>
-            next_state <= state_while_start_ram_dataptr;
-  
-          when state_while_start_ram_dataptr =>
-            if DATA_RDATA /= "00000000" then
-              next_state <= state_load_instruction;
-            else
-              next_state <= state_while_start_cnt_check;
-            end if;
-  
-          when state_while_start_cnt_check =>
-            if CNT_REG = "000000000000" then
-              next_state <= state_load_instruction;
-            else
-              next_state <= state_while_start_rom_enable;
-            end if;
-  
-          when state_while_start_rom_enable =>
-            next_state <= state_while_start_cnt_check;
-  
-          -- Break states
-          when state_break_start =>
-            next_state <= state_break_rom_enable;
-  
-          when state_break_rom_enable =>
-            next_state <= state_break_end;
-  
-          when state_break_end =>
-            if CNT_REG = "000000000000" then
-              next_state <= state_load_instruction;
-            else
-              next_state <= state_break_rom_enable;
-            end if;
-  
-          when state_other =>
-            next_state <= state_load_instruction;
-  
-          when state_return =>
-            next_state <= state_return;
-  
+            when state_idle =>  
+                next_state <= state_load_instruction;
+
+            when state_load_instruction =>
+                next_state <= state_decode_instruction;
+
+            when state_decode_instruction =>
+                case CODE_DATA is
+                    when X"3E" => next_state <= state_inc_val_ptr;
+                    when X"3C" => next_state <= state_dec_val_ptr;
+                    when X"2B" => next_state <= state_inc_cell_start;
+                    when X"2D" => next_state <= state_dec_cell_start;
+                    when X"5B" => next_state <= state_while_start;
+                    when X"5D" => next_state <= state_while_end;
+                    when X"2E" => next_state <= state_set_char_start;
+                    when X"2C" => next_state <= state_get_char_start;
+                    when X"7E" => next_state <= state_break;
+                    when X"00" => next_state <= state_return;
+                    when others => next_state <= state_other;
+                end case;
+            
+            when state_inc_val_ptr => 
+                next_state <= state_load_instruction;
+    
+            when state_dec_val_ptr => 
+                next_state <= state_load_instruction;
+    
+            when state_inc_cell_start =>
+                next_state <= state_mux_sel_10;
+    
+            when state_mux_sel_10 =>
+                next_state <= state_inc_cell_end;
+    
+            when state_inc_cell_end => 
+                next_state <= state_load_instruction;
+    
+            when state_dec_cell_start => 
+                next_state <= state_mux_sel_01;
+    
+            when state_mux_sel_01 => 
+                next_state <= state_dec_cell_end;
+    
+            when state_dec_cell_end => 
+                next_state <= state_load_instruction;
+    
+            -- Set char states
+
+            when state_set_char_start => 
+                next_state <= state_set_char_end;
+    
+            when state_set_char_end =>
+                if OUT_BUSY = '0' then
+                    next_state <= state_load_instruction;
+                else
+                    next_state <= state_set_char_end;
+                end if;
+            
+            -- Get char states
+
+            when state_get_char_start =>
+                next_state <= state_get_char_end;
+    
+            when state_get_char_end =>
+                if IN_VLD /= '1' then
+                    next_state <= state_get_char_end;
+                else
+                    next_state <= state_load_instruction;
+                end if;
+            
+            -- While Start states
+
+            when state_while_start =>
+                next_state <= state_while_start_ram_ptr;
+            
+            when state_while_start_ram_ptr =>
+                if DATA_RDATA = "00000000" then
+                    next_state <= state_while_start_cnt_check;
+                else
+                    next_state <= state_load_instruction;
+                end if;
+
+            when state_while_start_cnt_check =>
+                if CNT_OUT /= "000000000000" then
+                    next_state <= state_while_start_rom_en;
+                else
+                    next_state <= state_load_instruction;
+                end if;
+            
+            when state_while_start_rom_en =>
+                next_state <= state_while_start_cnt_check;
+            
+            -- While End states
+
+            when state_while_end =>
+                next_state <= state_while_end_ram_ptr;
+
+            when state_while_end_ram_ptr =>
+                if DATA_RDATA = "00000000" then
+                    next_state <= state_load_instruction;
+                else
+                    next_state <= state_while_end_rom_en;
+                end if;
+            
+            when state_while_end_cnt_loop =>
+                if CNT_OUT /= "000000000000" then
+                    next_state <= state_while_end_cnt_check;
+                else
+                    next_state <= state_load_instruction;
+                end if;
+            
+            when state_while_end_cnt_check =>
+                next_state <= state_while_end_rom_en;
+
+            when state_while_end_rom_en =>
+                next_state <= state_while_end_cnt_loop;
+            
+            -- Break command
+            
+            when state_break =>
+                next_state <= state_break_rom_en;
+            
+            when state_break_rom_en =>
+                next_state <= state_break_cnt_loop;
+
+            when state_break_cnt_loop =>
+                if CNT_OUT /= "000000000000" then
+                    next_state <= state_break_rom_en;
+                else
+                    next_state <= state_load_instruction;
+                end if;
+
+            -- Other state
+
+            when state_other =>
+                next_state <= state_load_instruction;
+
+            -- Halt state
+
+            when state_return =>
+                next_state <= state_return;
+
         end case;
-   end process;
-
-
+    end process;
 
 
    -- Logika výpočtu výstupných hodnôt
-   cpu_fsm_output_logic : process (CLK, EN, CODE_DATA, IN_VLD, OUT_BUSY, DATA_RDATA, CNT_REG ,current_state)
+   cpu_fsm_output_logic : process (CODE_DATA, IN_VLD, OUT_BUSY, DATA_RDATA, CNT_OUT ,current_state)
     begin
-      
-        PC_INC <= '0';
-        PC_DEC <= '0';
-        PC_CLEAR <= '0';
-        PTR_DEC <= '0';
-        PTR_INC <= '0';
-        PTR_CLEAR <= '0';
-        CNT_DEC <= '0';
-        CNT_CLEAR <= '0';
-        CNT_INC <= '0';
-        DATA_WREN <= '0';
-        IN_REQ <= '0';
-        MUX_SEL <= "00";
-        CODE_EN <= '0';
-        DATA_EN <= '0';
-        OUT_WREN <= '0';
+       
+       -- Preset output
+       PC_INC <= '0';
+       PC_DEC <= '0';
+       PC_CLEAR <= '0';
+       PTR_DEC <= '0';
+       PTR_INC <= '0';
+       PTR_CLEAR <= '0';
+       CNT_DEC <= '0';
+       CNT_CLEAR <= '0';
+       CNT_INC <= '0';
+       DATA_WREN <= '0';
+       IN_REQ <= '0';
+       MUX_SEL <= "00";
+       CODE_EN <= '0';
+       DATA_EN <= '0';
+       OUT_WREN <= '0';
       
         case current_state is
-          when state_idle =>
-            PC_CLEAR <= '1';
-            CNT_CLEAR <= '1';
-            PTR_CLEAR <= '1';
+            when state_idle =>
+                PC_CLEAR <= '1';
+                CNT_CLEAR <= '1';
+                PTR_CLEAR <= '1';
 
-          when state_load_instruction =>
-            CODE_EN <= '1';
+            when state_load_instruction =>
+                CODE_EN <= '1';
 
-          when state_inc_val_ptr =>
-            PC_INC <= '1';
-            PTR_INC <= '1';
+            when state_inc_val_ptr =>
+                PC_INC <= '1';
+                PTR_INC <= '1';
 
-          when state_dec_val_ptr =>
-            PC_DEC <= '1';
-            PTR_DEC <= '1';
+            when state_dec_val_ptr =>
+                PC_INC <= '1';
+                PTR_DEC <= '1';
 
-          when state_inc_cell_start =>
-            DATA_EN <= '1';
-            DATA_WREN <= '0';
+            when state_inc_cell_start =>
+                DATA_EN <= '1';
+                DATA_WREN <= '0';
 
-          when state_mux_sel_01 =>
-            MUX_SEL <= "01";
+            when state_mux_sel_10 =>
+                MUX_SEL <= "10";
 
-          when state_inc_cell_end =>
-            DATA_EN <= '1';
-            DATA_WREN <= '1';
-            PC_INC <= '1';
+            when state_inc_cell_end =>
+                DATA_EN <= '1';
+                DATA_WREN <= '1';
+                PC_INC <= '1';
 
-          when state_dec_cell_start =>
-            DATA_EN <= '1';
-            DATA_WREN <= '0';
+            when state_dec_cell_start =>
+                DATA_EN <= '1';
+                DATA_WREN <= '0';
 
-          when state_mux_sel_10 =>
-            MUX_SEL <= "10";
+            when state_mux_sel_01 =>
+                MUX_SEL <= "01";
 
-          when state_dec_cell_end =>
-            DATA_EN <= '1';
-            DATA_WREN <= '1';
-            PC_INC <= '1';
+            when state_dec_cell_end =>
+                DATA_EN <= '1';
+                DATA_WREN <= '1';
+                PC_INC <= '1';
 
-          -- Set char states
-          when state_set_char_start =>
-            DATA_EN <= '1';
-            DATA_WREN <= '0';
+            -- Set char states
+            when state_set_char_start =>
+                DATA_EN <= '1';
+                DATA_WREN <= '0';
 
-          when state_set_char_end =>
-            if OUT_BUSY = '0' then
-              OUT_WREN <= '1';
-              PC_INC <= '1';
-            else
-              DATA_EN <= '1';
-              DATA_WREN <= '0';
-            end if;
+            when state_set_char_end =>
+                if OUT_BUSY = '0' then
+                    OUT_WREN <= '1';
+                    PC_INC <= '1';
+                else
+                    DATA_EN <= '1';
+                    DATA_WREN <= '0';
+                end if;
 
-          -- Get char states
-          when state_get_char_start =>
-            IN_REQ <= '1';
-            MUX_SEL <= "00";
+            -- Get char states
+            when state_get_char_start =>
+                IN_REQ <= '1';
+                MUX_SEL <= "00";
 
-          when state_get_char_end =>
-            if IN_VLD /= '1' then
-              IN_REQ <= '1';
-              MUX_SEL <= "00";
-            else
-              DATA_EN <= '1';
-              DATA_WREN <= '1';
-              PC_INC <= '1';
-            end if;
+            when state_get_char_end =>
+                if IN_VLD /= '1' then
+                    IN_REQ <= '1';
+                    MUX_SEL <= "00";
+                else
+                    DATA_EN <= '1';
+                    DATA_WREN <= '1';
+                    PC_INC <= '1';
+                end if;
+            
+            -- While start states
+            
+            when state_while_start =>
+                PC_INC <= '1';
+                DATA_EN <= '1';
+                DATA_WREN <= '0';
+                
+            when state_while_start_ram_ptr =>
+                if DATA_RDATA = "00000000" then
+                    CNT_INC <= '1';
+                    CODE_EN <= '1';
+                end if;
 
-          -- While End states
-          when state_while_end =>
-            DATA_EN <= '1';
-            DATA_WREN <= '0';
+            when state_while_start_cnt_check =>
+                if CNT_OUT /= "000000000000" then
+                    if CODE_DATA = x"5B" then
+                        CNT_INC <= '1';
+                    elsif CODE_DATA = x"5D" then
+                        CNT_DEC <= '1';
+                    end if;
+                    PC_INC <= '1';
+                end if;
+                
+            when state_while_start_rom_en =>
+                CODE_EN <= '1';
 
-          when state_while_end_ram_dataptr =>
-            if DATA_RDATA = "00000000" then
-              PC_INC <= '1';
-            else
-              PC_DEC <= '1';
-              CNT_INC <= '1';
-            end if;
+            -- While End states
+            
+            when state_while_end =>
+                DATA_EN <= '1';
+                DATA_WREN <= '0';
 
-          when state_while_end_rom_enable =>
-            CODE_EN <= '1';
+            when state_while_end_ram_ptr =>
+                if DATA_RDATA = "00000000" then
+                    PC_INC <= '1';
+                else
+                    CNT_INC <= '1';
+                    PC_DEC <= '1';
+                end if;
+                
+            when state_while_end_cnt_loop =>
+                if CNT_OUT /= "000000000000" then
+                    if CODE_DATA = x"5D" then
+                        CNT_INC <= '1';
+                    elsif CODE_DATA = x"5B" then
+                        CNT_DEC <= '1';
+                    end if;
+                end if;
+                
+            when state_while_end_cnt_check =>
+                if CNT_OUT = "000000000000" then
+                    PC_INC <= '1';
+                else
+                    PC_DEC <= '1';
+                end if;
 
-          when state_while_end_cnt_loop =>
-            if CNT_REG /= "000000000000" then
-              if CODE_DATA = X"5D" then
+            when state_while_end_rom_en =>
+                CODE_EN <= '1';
+
+            -- Break load states    
+            when state_break =>
                 CNT_INC <= '1';
-              elsif CODE_DATA = X"5B" then
-                CNT_DEC <= '1';
-              end if;
-            end if;
+                PC_INC <= '1';
+            
+            when state_break_rom_en =>
+                CODE_EN <= '1';
 
-          when state_while_end_cnt_check =>
-            if CNT_REG = "000000000000" then
-              PC_INC <= '1';
-            else
-              PC_DEC <= '1';
-            end if;
+            when state_break_cnt_loop =>
 
-          -- While start states
-          when state_while_start =>
-            PC_INC <= '1';
-            DATA_EN <= '1';
-            DATA_WREN <= '0';
+                if CNT_OUT /= "000000000000" then
 
-          when state_while_start_ram_dataptr =>
-            if DATA_RDATA = "00000000" then
-              CNT_INC <= '1';
-              CODE_EN <= '1';
-            end if;
+                    if CODE_DATA = x"5B" then 
+                        CNT_INC <= '1';
+                    elsif CODE_DATA = x"5D" then
+                        CNT_DEC <= '1';
+                    end if;
+                    PC_INC <= '1';
+                end if;
 
-          when state_while_start_cnt_check =>
-            if CNT_REG /= "000000000000" then
-              if CODE_DATA = X"5B" then
-                CNT_INC <= '1';
-              elsif CODE_DATA = X"5D" then
-                CNT_DEC <= '1';
-              end if;
-              PC_INC <= '1';
-            end if;
+            when state_other =>
+                PC_INC <= '1';
 
-          when state_while_start_rom_enable =>
-            CODE_EN <= '1';
-
-          -- Break states
-          when state_break_start =>
-            PC_INC <= '1';
-            CNT_INC <= '1';
-
-          when state_break_rom_enable =>
-            CODE_EN <= '1';
-
-          when state_break_end =>
-            if CNT_REG /= "000000000000" then
-              if CODE_DATA = X"5B" then
-                CNT_INC <= '1';
-              elsif CODE_DATA = X"5D" then
-                CNT_DEC <= '1';
-              end if;
-              PC_INC <= '1';
-            end if;
-
-          when state_other =>
-            PC_INC <= '1';
-
-          when others => null;
+            when others => null;
         end case;
-
     end process;
   end behavioral;
 
@@ -664,23 +683,26 @@ architecture behavioral of cpu is
  -- zde dopiste potrebne deklarace signalu
 
   -- PTR Signals
-  signal ptr_out : std_logic_vector (9 downto 0);
-  signal ptr_inc : std_logic;
-  signal ptr_dec : std_logic;
-  signal ptr_clear : std_logic;
+  signal ptr_out : std_logic_vector (9 downto 0) := "0000000000";
+  signal ptr_inc : std_logic := '0';
+  signal ptr_dec : std_logic := '0';
+  signal ptr_clear : std_logic := '0';
+
   -- CNT Signals
-  signal cnt_out : std_logic_vector (11 downto 0);
-  signal cnt_inc : std_logic;
-  signal cnt_dec : std_logic;
-  signal cnt_clear : std_logic;
+  signal cnt_out : std_logic_vector (11 downto 0) := "000000000000";
+  signal cnt_inc : std_logic := '0';
+  signal cnt_dec : std_logic := '0';
+  signal cnt_clear : std_logic := '0';
+
   -- PC Signals
-  signal pc_out : std_logic_vector (11 downto 0);
-  signal pc_inc : std_logic;
-  signal pc_dec : std_logic;
-  signal pc_clear : std_logic;
+  signal pc_out : std_logic_vector (11 downto 0) := "000000000000";
+  signal pc_inc : std_logic := '0';
+  signal pc_dec : std_logic := '0';
+  signal pc_clear : std_logic := '0';
+
   -- MUX Signals
-  signal mux_sel : std_logic_vector (1 downto 0 ):= "00";
-  signal mux_out : std_logic_vector (7 downto 0);
+  signal mux_sel : std_logic_vector (1 downto 0 ) := "00";
+  signal mux_out : std_logic_vector (7 downto 0)  := "00000000";
 
 begin
 
@@ -694,7 +716,7 @@ begin
     IN_VLD => IN_VLD,
     OUT_BUSY => OUT_BUSY,
     DATA_RDATA => DATA_RDATA,
-    CNT_REG => cnt_out,
+    CNT_OUT => cnt_out,
     PTR_INC => ptr_inc,
     PTR_DEC => ptr_dec,
     PTR_CLEAR => ptr_clear,
