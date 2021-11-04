@@ -182,8 +182,8 @@ entity CPU_MUX is
        elsif CLK'event and CLK = '1' then
           case MUX_SEL is
             when "00" =>  mux_val <= DATA_IN_00;
-            when "01" =>  mux_val <= DATA_IN_01 -1;
-            when "10" =>  mux_val <= DATA_IN_01 +1;
+            when "01" =>  mux_val <= DATA_IN_01 - 1;
+            when "10" =>  mux_val <= DATA_IN_01 + 1;
             when others => mux_val <= "00000000";
           end case;
        end if;
@@ -243,6 +243,7 @@ end entity CPU_FSM;
   architecture behavioral of CPU_FSM is
 
     type cpu_fsm_state is (
+        
         -- Service states
         state_idle,
         state_load_instruction,
@@ -318,17 +319,17 @@ end entity CPU_FSM;
 
             when state_decode_instruction =>
                 case CODE_DATA is
-                    when X"3E" => next_state <= state_inc_val_ptr;
-                    when X"3C" => next_state <= state_dec_val_ptr;
-                    when X"2B" => next_state <= state_inc_cell_start;
-                    when X"2D" => next_state <= state_dec_cell_start;
-                    when X"5B" => next_state <= state_while_start;
-                    when X"5D" => next_state <= state_while_end;
-                    when X"2E" => next_state <= state_set_char_start;
-                    when X"2C" => next_state <= state_get_char_start;
-                    when X"7E" => next_state <= state_break;
-                    when X"00" => next_state <= state_return;
-                    when others => next_state <= state_other;
+                    when X"3E" => next_state <= state_inc_val_ptr;          -- { > }
+                    when X"3C" => next_state <= state_dec_val_ptr;          -- { < }
+                    when X"2B" => next_state <= state_inc_cell_start;       -- { + }
+                    when X"2D" => next_state <= state_dec_cell_start;       -- { - }
+                    when X"5B" => next_state <= state_while_start;          -- { [ }
+                    when X"5D" => next_state <= state_while_end;            -- { ] }
+                    when X"2E" => next_state <= state_set_char_start;       -- { . }
+                    when X"2C" => next_state <= state_get_char_start;       -- { , }
+                    when X"7E" => next_state <= state_break;                -- { ~ }
+                    when X"00" => next_state <= state_return;               -- { null }
+                    when others => next_state <= state_other;               -- { undef }
                 end case;
             
             when state_inc_val_ptr => 
@@ -781,6 +782,7 @@ begin
 
 
  -- Priradenie výstupov 
+
  DATA_WDATA <= mux_out;
  DATA_ADDR <= ptr_out;
  CODE_ADDR <= pc_out;
